@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Program Bebe v1.2</title>
+
+<meta name="theme-color" content="#ff5c8a">
+
+<style>
+body{
+    margin:0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
+    background: linear-gradient(180deg,#fff1f6,#eef7ff);
+}
+
+.header{
+    text-align:center;
+    padding:25px 15px 10px;
+}
+
+.header h1{
+    margin:0;
+    font-size:26px;
+    color:#ff5c8a;
+}
+
+.header p{
+    margin-top:6px;
+    font-size:13px;
+    color:#777;
+}
+
+.container{
+    max-width:780px;
+    margin:auto;
+    padding:15px;
+}
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:16px;
+    margin-bottom:15px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.06);
+}
+
+.row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+}
+
+label{
+    font-weight:600;
+}
+
+input[type="time"]{
+    padding:10px;
+    border-radius:12px;
+    border:1px solid #ddd;
+    font-size:15px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:14px;
+    background: linear-gradient(90deg,#ff5c8a,#ff9bb3);
+    color:white;
+    font-weight:600;
+    font-size:15px;
+}
+
+.timeline{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.event{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px;
+    border-radius:14px;
+    background:#fafafa;
+}
+
+.event.sleep{ border-left:5px solid #6ec6ff; background:#eef7ff; }
+.event.feed{ border-left:5px solid #ff7aa8; background:#fff0f6; }
+.event.meal{ border-left:5px solid #8be28b; background:#f0fff3; }
+
+.event input{
+    border:none;
+    background:white;
+    padding:6px 10px;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>👶 Program Bebe</h1>
+    <p>v1.2 — notificări automate</p>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <div class="row">
+            <label>Ora de trezire</label>
+            <input type="time" id="wake" value="07:00">
+        </div>
+        <button onclick="generate()">Generează program</button>
+    </div>
+
+    <div class="card">
+        <div id="list" class="timeline"></div>
+    </div>
+
+</div>
+
+<script>
+
+let overrides = {};
+let events = [];
+let timers = [];
+
+const min = t => {
+    let [h,m]=t.split(":").map(Number);
+    return h*60+m;
+};
+
+const time = m => {
+    m=(m+1440)%1440;
+    return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+};
+
+function get(id, def){
+    return overrides[id] ?? def;
+}
+
+/* =========================
+   NOTIFICĂRI
+========================= */
+
+async function requestNotif(){
+    if("Notification" in window){
+        if(Notification.permission !== "granted"){
+            await Notification.requestPermission();
+        }
+    }
+}
+
+function clearNotifications(){
+    timers.forEach(t => clearTimeout(t));
+    timers = [];
+}
+
+function schedule(title, tmin){
+
+    if(Notification.permission !== "granted") return;
+
+    let now = new Date();
+
+    let target = new Date();
+    target.setHours(Math.floor(tmin/60), tmin%60, 0, 0);
+
+    let diff = target - now;
+    if(diff <= 0) return;
+
+    let timer = setTimeout(()=>{
+        new Notification(title);
+    }, diff);
+
+    timers.push(timer);
+}
+
+function setupNotifications(){
+
+    clearNotifications();
+
+    events.forEach(e=>{
+
+        // ⏰ notificare principală
+        schedule("⏰ " + e.name, e.time);
+
+        // ⚠️ avertizare 15 min
+        schedule("⚠️ în 15 min: " + e.name, e.time - 15);
+    });
+}
+
+/* =========================
+   BUILD PROGRAM
+========================= */
+
+function build(){
+
+    const w = get("wake", min(document.getElementById("wake").value));
+
+    const s1C = w + 165;
+    const s1W = get("s1w", s1C + 75);
+
+    const lunch = w + 315;
+
+    const s2C = s1W + 195;
+    const s2W = get("s2w", s2C + 90);
+
+    const night = s2W + 210;
+
+    const b2 = s2W;
+    const b3 = night - 30;
+
+    events = [
+        {id:"wake", name:"☀️ Trezire", time:w},
+        {id:"b1", name:"🍼 Biberon 1", time:w+15},
+        {id:"meal", name:"🥣 Mic dejun", time:w+135},
+
+        {id:"s1c", name:"😴 Somn 1 - Culcare", time:s1C},
+        {id:"s1w", name:"😴 Somn 1 - Trezire", time:s1W},
+
+        {id:"lunch", name:"🍽️ Prânz", time:lunch},
+
+        {id:"s2c", name:"😴 Somn 2 - Culcare", time:s2C},
+        {id:"s2w", name:"😴 Somn 2 - Trezire", time:s2W},
+
+        {id:"b2", name:"🍼 Biberon 2", time:b2},
+        {id:"b3", name:"🍼 Biberon 3", time:b3},
+        {id:"night", name:"🌙 Somn noapte", time:night}
+    ];
+
+    render();
+    setupNotifications();
+}
+
+/* =========================
+   UI
+========================= */
+
+function generate(){
+    overrides = {};
+    build();
+}
+
+function render(){
+
+    const c=document.getElementById("list");
+    c.innerHTML="";
+
+    events.forEach(e=>{
+
+        const div=document.createElement("div");
+        div.className="event "+
+            (e.name.includes("Somn")?"sleep":
+             e.name.includes("Biberon")?"feed":
+             e.name.includes("Prânz")||e.name.includes("Mic")?"meal":"");
+
+        div.innerHTML=`
+            <span>${e.name}</span>
+            <input type="time"
+                value="${time(e.time)}"
+                onchange="edit('${e.id}',this.value)">
+        `;
+
+        c.appendChild(div);
+    });
+}
+
+function edit(id,val){
+    overrides[id] = min(val);
+    build();
+}
+
+/* INIT */
+requestNotif();
+build();
+
+</script>
+
+</body>
+</html>
