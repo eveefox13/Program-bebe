@@ -2,10 +2,14 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Program Bebe v1.2</title>
 
+<!-- PASUL 4 ADĂUGAT -->
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff5c8a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<title>Program Bebe v1.2</title>
 
 <style>
 body{
@@ -187,10 +191,8 @@ function setupNotifications(){
 
     events.forEach(e=>{
 
-        // ⏰ notificare principală
         schedule("⏰ " + e.name, e.time);
 
-        // ⚠️ avertizare 15 min
         schedule("⚠️ în 15 min: " + e.name, e.time - 15);
     });
 }
@@ -279,6 +281,11 @@ function edit(id,val){
 /* INIT */
 requestNotif();
 build();
+
+/* PASUL 5 ADĂUGAT */
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+}
 
 </script>
 
