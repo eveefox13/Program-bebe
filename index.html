@@ -135,6 +135,58 @@ let overrides = {};
 let events = [];
 let timers = [];
 
+const rules = {
+    wake: null,
+
+    b1:   { base: "wake", offset: 30 },
+
+    s1c:  { base: "wake", offset: 165 },
+    s1w:  { base: "s1c", offset: 75 },
+
+    meal: { base: "b1", offset: 105 },
+
+    lunch:{ base: "meal", offset: 210 },
+    b2:   { base: "meal", offset: 195 },
+
+    s2c:  { base: "s1w", offset: 195 },
+    s2w:  { base: "s2c", offset: 90 },
+
+    night:{ base: "s2w", offset: 210 },
+
+    b3:   { base: "night", offset: -30 }
+};
+
+let computed = {};
+
+function computeAll(wake){
+
+    computed = { wake };
+
+    let changed = true;
+
+    while(changed){
+        changed = false;
+
+        for(let id in rules){
+
+            if(id === "wake") continue;
+
+            const rule = rules[id];
+
+            const baseVal = computed[rule.base];
+
+            if(baseVal == null) continue;
+
+            const value = overrides[id] ?? (baseVal + rule.offset);
+
+            if(computed[id] !== value){
+                computed[id] = value;
+                changed = true;
+            }
+        }
+    }
+}
+
 const min = t => {
     let [h,m]=t.split(":").map(Number);
     return h*60+m;
@@ -205,48 +257,7 @@ function build(){
 
     const w = get("wake", min(document.getElementById("wake").value));
 
-    let computed = {
-        wake: w
-    };
-
-    // =========================
-    // 🟣 SLEEP CHAIN (MASTER)
-    // =========================
-
-    const s1c = computed.wake + 165;
-    const s1w = get("s1w", s1c + 75);
-
-    const s2c = s1w + 195;
-    const s2w = get("s2w", s2c + 90);
-
-    const night = s2w + 210;
-
-    computed.s1c = s1c;
-    computed.s1w = s1w;
-    computed.s2c = s2c;
-    computed.s2w = s2w;
-    computed.night = night;
-
-    // =========================
-    // 🟡 FEEDING CHAIN
-    // =========================
-
-    const b1 = computed.wake + 30;
-    const meal = b1 + 105;
-    const lunch = meal + 210;
-
-    const b2 = meal + 195;
-    const b3 = night - 30;
-
-    computed.b1 = b1;
-    computed.meal = meal;
-    computed.lunch = lunch;
-    computed.b2 = b2;
-    computed.b3 = b3;
-
-    // =========================
-    // UI EVENTS
-    // =========================
+    computeAll(w);
 
     events = [
         {id:"wake", name:"☀️ Trezire", time:computed.wake},
