@@ -205,45 +205,76 @@ function build(){
 
     const w = get("wake", min(document.getElementById("wake").value));
 
-    let overridesLocal = {...overrides};
+    const values = {
+        wake: w
+    };
 
-    function ov(id, def){
-        return overridesLocal[id] ?? def;
+    const rules = [
+        ["b1", "wake", 30],
+
+        ["s1c", "wake", 165],
+        ["s1w", "s1c", 75],
+
+        ["meal", "b1", 105],
+
+        ["lunch", "meal", 210],
+        ["b2", "meal", 195],
+
+        ["s2c", "s1w", 195],
+        ["s2w", "s2c", 90],
+
+        ["night", "s2w", 210],
+
+        ["b3", "night", -30]
+    ];
+
+    let computed = {
+        wake: w
+    };
+
+    // 1. calculezi SOMNURI (depind între ele)
+    function getValue(id){
+
+        if(computed[id] != null) return computed[id];
+        return null;
     }
 
-    const eventsCalc = [];
+    let changed = true;
 
-    // WAKE
-    const wake = w;
-    eventsCalc.push({id:"wake", name:"☀️ Trezire", time:wake});
+    while(changed){
+        changed = false;
 
-    // STRUCTURĂ FIXĂ
-    const s1c = wake + 165;
-    const s1w = ov("s1w", s1c + 75);
+        for(let [id, dep, offset] of rules){
 
-    const lunch = wake + 315;
+            if(computed[id] != null) continue;
 
-    const s2c = s1w + 195;
-    const s2w = ov("s2w", s2c + 90);
+            let base = computed[dep];
 
-    const night = s2w + 210;
+            if(base == null) continue;
 
-    eventsCalc.push({id:"b1", name:"🍼 Biberon 1", time:wake+15});
-    eventsCalc.push({id:"meal", name:"🥣 Mic dejun", time:wake+135});
+            computed[id] = base + offset;
+            changed = true;
+        }
+    }
 
-    eventsCalc.push({id:"s1c", name:"😴 Somn 1 - Culcare", time:s1c});
-    eventsCalc.push({id:"s1w", name:"😴 Somn 1 - Trezire", time:s1w});
+    events = [
+        {id:"wake", name:"☀️ Trezire", time:computed.wake},
 
-    eventsCalc.push({id:"lunch", name:"🍽️ Prânz", time:lunch});
+        {id:"b1", name:"🍼 Biberon 1", time:computed.b1},
+        {id:"meal", name:"🥣 Mic dejun", time:computed.meal},
+        {id:"lunch", name:"🍽️ Prânz", time:computed.lunch},
 
-    eventsCalc.push({id:"s2c", name:"😴 Somn 2 - Culcare", time:s2c});
-    eventsCalc.push({id:"s2w", name:"😴 Somn 2 - Trezire", time:s2w});
+        {id:"s1c", name:"😴 Somn 1 - Culcare", time:computed.s1c},
+        {id:"s1w", name:"😴 Somn 1 - Trezire", time:computed.s1w},
 
-    eventsCalc.push({id:"b2", name:"🍼 Biberon 2", time:s2w});
-    eventsCalc.push({id:"b3", name:"🍼 Biberon 3", time:s2w+180});
-    eventsCalc.push({id:"night", name:"🌙 Somn noapte", time:night});
+        {id:"s2c", name:"😴 Somn 2 - Culcare", time:computed.s2c},
+        {id:"s2w", name:"😴 Somn 2 - Trezire", time:computed.s2w},
 
-    events = eventsCalc;
+        {id:"b2", name:"🍼 Biberon 2", time:computed.b2},
+        {id:"b3", name:"🍼 Biberon 3", time:computed.b3},
+
+        {id:"night", name:"🌙 Somn noapte", time:computed.night},
+    ];
 
     render();
     setupNotifications();
