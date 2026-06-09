@@ -205,51 +205,43 @@ function build(){
 
     const w = get("wake", min(document.getElementById("wake").value));
 
-    let state = {
-        wake: w
-    };
+    let overridesLocal = {...overrides};
+
+    function ov(id, def){
+        return overridesLocal[id] ?? def;
+    }
 
     const eventsCalc = [];
 
-    // 1. WAKE
-    eventsCalc.push({id:"wake", name:"☀️ Trezire", time: state.wake});
+    // WAKE
+    const wake = w;
+    eventsCalc.push({id:"wake", name:"☀️ Trezire", time:wake});
 
-    // 2. BOTTLE 1 (fix)
-    const b1 = state.wake + 15;
-    eventsCalc.push({id:"b1", name:"🍼 Biberon 1", time: b1});
+    // STRUCTURĂ FIXĂ
+    const s1c = wake + 165;
+    const s1w = ov("s1w", s1c + 75);
 
-    // 3. MEAL
-    const meal = state.wake + 135;
-    eventsCalc.push({id:"meal", name:"🥣 Mic dejun", time: meal});
+    const lunch = wake + 315;
 
-    // 4. SLEEP 1
-    const s1C = state.wake + 165;
-    const s1W = get("s1w", s1C + 75);
+    const s2c = s1w + 195;
+    const s2w = ov("s2w", s2c + 90);
 
-    state.s1w = s1W;
+    const night = s2w + 210;
 
-    eventsCalc.push({id:"s1c", name:"😴 Somn 1 - Culcare", time: s1C});
-    eventsCalc.push({id:"s1w", name:"😴 Somn 1 - Trezire", time: s1W});
+    eventsCalc.push({id:"b1", name:"🍼 Biberon 1", time:wake+15});
+    eventsCalc.push({id:"meal", name:"🥣 Mic dejun", time:wake+135});
 
-    // 5. LUNCH
-    const lunch = state.wake + 315;
-    eventsCalc.push({id:"lunch", name:"🍽️ Prânz", time: lunch});
+    eventsCalc.push({id:"s1c", name:"😴 Somn 1 - Culcare", time:s1c});
+    eventsCalc.push({id:"s1w", name:"😴 Somn 1 - Trezire", time:s1w});
 
-    // 6. SLEEP 2 (DEPINDE DE S1W -> IMPORTANT)
-    const s2C = s1W + 195;
-    const s2W = get("s2w", s2C + 90);
+    eventsCalc.push({id:"lunch", name:"🍽️ Prânz", time:lunch});
 
-    eventsCalc.push({id:"s2c", name:"😴 Somn 2 - Culcare", time: s2C});
-    eventsCalc.push({id:"s2w", name:"😴 Somn 2 - Trezire", time: s2W});
+    eventsCalc.push({id:"s2c", name:"😴 Somn 2 - Culcare", time:s2c});
+    eventsCalc.push({id:"s2w", name:"😴 Somn 2 - Trezire", time:s2w});
 
-    // 7. BOTTLES + NIGHT
-    const b2 = s2W;
-    const b3 = s2W + 180;
-    const night = s2W + 210;
-
-    eventsCalc.push({id:"b2", name:"🍼 Biberon 2", time: b2});
-    eventsCalc.push({id:"b3", name:"🍼 Biberon 3", time: b3});
-    eventsCalc.push({id:"night", name:"🌙 Somn noapte", time: night});
+    eventsCalc.push({id:"b2", name:"🍼 Biberon 2", time:s2w});
+    eventsCalc.push({id:"b3", name:"🍼 Biberon 3", time:s2w+180});
+    eventsCalc.push({id:"night", name:"🌙 Somn noapte", time:night});
 
     events = eventsCalc;
 
