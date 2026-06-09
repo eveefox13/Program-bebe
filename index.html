@@ -205,57 +205,48 @@ function build(){
 
     const w = get("wake", min(document.getElementById("wake").value));
 
-    const values = {
-        wake: w
-    };
-
-    const rules = [
-        ["b1", "wake", 30],
-
-        ["s1c", "wake", 165],
-        ["s1w", "s1c", 75],
-
-        ["meal", "b1", 105],
-
-        ["lunch", "meal", 210],
-        ["b2", "meal", 195],
-
-        ["s2c", "s1w", 195],
-        ["s2w", "s2c", 90],
-
-        ["night", "s2w", 210],
-
-        ["b3", "night", -30]
-    ];
-
     let computed = {
         wake: w
     };
 
-    // 1. calculezi SOMNURI (depind între ele)
-    function getValue(id){
+    // =========================
+    // 🟣 SLEEP CHAIN (MASTER)
+    // =========================
 
-        if(computed[id] != null) return computed[id];
-        return null;
-    }
+    const s1c = computed.wake + 165;
+    const s1w = get("s1w", s1c + 75);
 
-    let changed = true;
+    const s2c = s1w + 195;
+    const s2w = get("s2w", s2c + 90);
 
-    while(changed){
-        changed = false;
+    const night = s2w + 210;
 
-        for(let [id, dep, offset] of rules){
+    computed.s1c = s1c;
+    computed.s1w = s1w;
+    computed.s2c = s2c;
+    computed.s2w = s2w;
+    computed.night = night;
 
-            if(computed[id] != null) continue;
+    // =========================
+    // 🟡 FEEDING CHAIN
+    // =========================
 
-            let base = computed[dep];
+    const b1 = computed.wake + 30;
+    const meal = b1 + 105;
+    const lunch = meal + 210;
 
-            if(base == null) continue;
+    const b2 = meal + 195;
+    const b3 = night - 30;
 
-            computed[id] = base + offset;
-            changed = true;
-        }
-    }
+    computed.b1 = b1;
+    computed.meal = meal;
+    computed.lunch = lunch;
+    computed.b2 = b2;
+    computed.b3 = b3;
+
+    // =========================
+    // UI EVENTS
+    // =========================
 
     events = [
         {id:"wake", name:"☀️ Trezire", time:computed.wake},
