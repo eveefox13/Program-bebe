@@ -162,11 +162,17 @@ function computeAll(wake){
         changed = false;
         for(let id in rules){
             if(id === "wake") continue;
+            if(id === "b2") continue; // handled separately below
             const rule = rules[id];
             const baseVal = computed[rule.base];
             if(baseVal == null) continue;
             const value = overrides[id] ?? (baseVal + rule.offset);
             if(computed[id] !== value){ computed[id] = value; changed = true; }
+        }
+        // b2 = max(lunch + 195, s2w)
+        if(computed.lunch != null && computed.s2w != null){
+            const value = overrides["b2"] ?? Math.max(computed.lunch + 195, computed.s2w);
+            if(computed.b2 !== value){ computed.b2 = value; changed = true; }
         }
     }
 }
