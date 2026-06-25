@@ -128,6 +128,31 @@ const rules = {
     b3:   { base: "night",offset: -30 }
 };
 
+// Build a map of node -> list of direct children
+function buildChildren(){
+    const children = {};
+    for(let id in rules){
+        if(rules[id] === null) continue;
+        const base = rules[id].base;
+        if(!children[base]) children[base] = [];
+        children[base].push(id);
+    }
+    return children;
+}
+const children = buildChildren();
+
+// Get all descendants of a node (recursive)
+function getDescendants(id){
+    const result = [];
+    const queue = [...(children[id] || [])];
+    while(queue.length){
+        const cur = queue.shift();
+        result.push(cur);
+        (children[cur] || []).forEach(c => queue.push(c));
+    }
+    return result;
+}
+
 let computed = {};
 
 function computeAll(wake){
@@ -175,7 +200,6 @@ function setupNotifications(){
 
 function build(){
     const w = min(document.getElementById("wake").value);
-    overrides = {};
     computeAll(w);
     events = [
         {id:"wake",  name:"☀️ Trezire",          time:computed.wake},
@@ -212,11 +236,15 @@ function render(){
 }
 
 function edit(id, val){
+    // Set override for the edited field
     overrides[id] = min(val);
+    // Clear overrides for all descendants so they recascade from new value
+    getDescendants(id).forEach(d => delete overrides[d]);
     build();
 }
 
 function generate(){
+    overrides = {};
     build();
 }
 
