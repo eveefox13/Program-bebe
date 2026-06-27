@@ -117,14 +117,14 @@ let timers = [];
 const rules = {
     wake: null,
     b1:   { base: "wake", offset: 30 },
-    s1c:  { base: "wake", offset: 165 },
+    s1c:  { base: "wake", offset: 180 },
     s1w:  { base: "s1c",  offset: 75 },
     meal: { base: "b1",   offset: 105 },
     lunch:{ base: "meal", offset: 210 },
     b2:   { base: "lunch",offset: 195 },
-    s2c:  { base: "s1w",  offset: 195 },
+    s2c:  { base: "s1w",  offset: 200 },
     s2w:  { base: "s2c",  offset: 90 },
-    night:{ base: "s2w",  offset: 210 },
+    night:{ base: "s2w",  offset: 225 },
     b3:   { base: "night",offset: -30 }
 };
 
