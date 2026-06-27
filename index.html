@@ -114,34 +114,46 @@ let overrides = {};
 let events = [];
 let timers = [];
 
+const TOTAL_SLEEP = 165; // 2h45min în minute
+
 const rules = {
     wake: null,
     b1:   { base: "wake", offset: 30 },
-    s1c:  { base: "wake", offset: 180 },
-    s1w:  { base: "s1c",  offset: 75 },
+    s1c:  { base: "wake", offset: 180 },  // somn 1 culcare: 3h după trezire
+    s1w:  { base: "s1c",  offset: 75 },   // somn 1 trezire: 1h15 implicit
     meal: { base: "b1",   offset: 105 },
     lunch:{ base: "meal", offset: 210 },
-    b2:   { base: "lunch",offset: 195 },
-    s2c:  { base: "s1w",  offset: 200 },
-    s2w:  { base: "s2c",  offset: 90 },
-    night:{ base: "s2w",  offset: 225 },
+    s2c:  { base: "s1w",  offset: 200 },  // somn 2 culcare: 3h20 după trezire somn 1
+    // s2w: custom — depinde de durata somn 1
+    night:{ base: "s2w",  offset: 225 },  // somn noapte: 3h45 după trezire somn 2
     b3:   { base: "night",offset: -30 }
+    // b2: custom — max(lunch+195, s2w)
 };
 
-// Build a map of node -> list of direct children
 function buildChildren(){
-    const children = {};
+    const ch = {};
     for(let id in rules){
         if(rules[id] === null) continue;
         const base = rules[id].base;
-        if(!children[base]) children[base] = [];
-        children[base].push(id);
+        if(!ch[base]) ch[base] = [];
+        ch[base].push(id);
     }
-    return children;
+    // s2w depinde de s2c, s1w, s1c
+    if(!ch["s2c"]) ch["s2c"] = [];
+    if(!ch["s1w"]) ch["s1w"] = [];
+    if(!ch["s1c"]) ch["s1c"] = [];
+    ch["s2c"].push("s2w");
+    ch["s1w"].push("s2w");
+    ch["s1c"].push("s2w");
+    // b2 depinde de lunch și s2w
+    if(!ch["lunch"]) ch["lunch"] = [];
+    if(!ch["s2w"])   ch["s2w"]   = [];
+    ch["lunch"].push("b2");
+    ch["s2w"].push("b2");
+    return ch;
 }
 const children = buildChildren();
 
-// Get all descendants of a node (recursive)
 function getDescendants(id){
     const result = [];
     const queue = [...(children[id] || [])];
@@ -160,16 +172,26 @@ function computeAll(wake){
     let changed = true;
     while(changed){
         changed = false;
+
+        // Reguli simple
         for(let id in rules){
             if(id === "wake") continue;
-            if(id === "b2") continue; // handled separately below
             const rule = rules[id];
             const baseVal = computed[rule.base];
             if(baseVal == null) continue;
             const value = overrides[id] ?? (baseVal + rule.offset);
             if(computed[id] !== value){ computed[id] = value; changed = true; }
         }
-        // b2 = max(lunch + 195, s2w)
+
+        // s2w custom: s2c + (2h45 - durata_s1)
+        if(computed.s2c != null && computed.s1w != null && computed.s1c != null){
+            const s1duration = computed.s1w - computed.s1c;
+            const s2duration = Math.max(0, TOTAL_SLEEP - s1duration);
+            const value = overrides["s2w"] ?? (computed.s2c + s2duration);
+            if(computed.s2w !== value){ computed.s2w = value; changed = true; }
+        }
+
+        // b2 custom: max(lunch + 195, s2w)
         if(computed.lunch != null && computed.s2w != null){
             const value = overrides["b2"] ?? Math.max(computed.lunch + 195, computed.s2w);
             if(computed.b2 !== value){ computed.b2 = value; changed = true; }
@@ -242,9 +264,7 @@ function render(){
 }
 
 function edit(id, val){
-    // Set override for the edited field
     overrides[id] = min(val);
-    // Clear overrides for all descendants so they recascade from new value
     getDescendants(id).forEach(d => delete overrides[d]);
     build();
 }
