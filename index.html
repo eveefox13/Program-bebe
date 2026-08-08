@@ -114,7 +114,7 @@ let overrides = {};
 let events = [];
 let timers = [];
 
-const TOTAL_SLEEP = 165; // 2h45min în minute
+const TOTAL_SLEEP = 150; // 2h30min în minute
 
 const rules = {
     wake: null,
@@ -183,7 +183,7 @@ function computeAll(wake){
             if(computed[id] !== value){ computed[id] = value; changed = true; }
         }
 
-        // s2w custom: s2c + (2h45 - durata_s1)
+        // s2w custom: s2c + (2h30 - durata_s1)
         if(computed.s2c != null && computed.s1w != null && computed.s1c != null){
             const s1duration = computed.s1w - computed.s1c;
             const s2duration = Math.max(0, TOTAL_SLEEP - s1duration);
