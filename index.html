@@ -239,7 +239,7 @@ function build(){
         {id:"s2c",   name:"😴 Somn 2 - Culcare", time:computed.s2c},
         {id:"s2w",   name:"😴 Somn 2 - Trezire", time:computed.s2w},
         {id:"b2",    name:"🍼 Biberon 2",         time:computed.b2},
-        {id:"b3",    name:"🍼 Biberon 3",         time:computed.b3},
+        {id:"b3",    name:"🍽️ Cina",              time:computed.b3},
         {id:"night", name:"🌙 Somn noapte",       time:computed.night},
     ];
     render();
@@ -254,7 +254,7 @@ function render(){
         div.className = "event " +
             (e.name.includes("Somn") ? "sleep" :
              e.name.includes("Biberon") ? "feed" :
-             e.name.includes("Prânz") || e.name.includes("Mic") ? "meal" : "");
+             e.name.includes("Prânz") || e.name.includes("Mic") || e.name.includes("Cina") ? "meal" : "");
         div.innerHTML = `
             <span>${e.name}</span>
             <input type="time" value="${time(e.time)}" onchange="edit('${e.id}',this.value)">
