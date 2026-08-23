@@ -127,7 +127,7 @@ const rules = {
     // s2w: custom — depinde de durata somn 1
     night:{ base: "s2w",  offset: 225 },  // somn noapte: 3h45 după trezire somn 2
     b3:   { base: "night",offset: -45 }
-    // b2: custom — max(lunch+195, s2w)
+    // b2: custom — max(night - 180, s2w)
 };
 
 function buildChildren(){
@@ -145,10 +145,10 @@ function buildChildren(){
     ch["s2c"].push("s2w");
     ch["s1w"].push("s2w");
     ch["s1c"].push("s2w");
-    // b2 depinde de lunch și s2w
-    if(!ch["lunch"]) ch["lunch"] = [];
+    // b2 depinde de night și s2w
+    if(!ch["night"]) ch["night"] = [];
     if(!ch["s2w"])   ch["s2w"]   = [];
-    ch["lunch"].push("b2");
+    ch["night"].push("b2");
     ch["s2w"].push("b2");
     return ch;
 }
@@ -191,9 +191,9 @@ function computeAll(wake){
             if(computed.s2w !== value){ computed.s2w = value; changed = true; }
         }
 
-        // b2 custom: max(lunch + 195, s2w)
-        if(computed.lunch != null && computed.s2w != null){
-            const value = overrides["b2"] ?? Math.max(computed.lunch + 195, computed.s2w);
+        // b2 custom: cu 3h înainte de somnul de noapte, dar nu mai devreme de trezirea din somn 2
+        if(computed.night != null && computed.s2w != null){
+            const value = overrides["b2"] ?? Math.max(computed.night - 180, computed.s2w);
             if(computed.b2 !== value){ computed.b2 = value; changed = true; }
         }
     }
@@ -238,8 +238,8 @@ function build(){
         {id:"lunch", name:"🍽️ Prânz",            time:computed.lunch},
         {id:"s2c",   name:"😴 Somn 2 - Culcare", time:computed.s2c},
         {id:"s2w",   name:"😴 Somn 2 - Trezire", time:computed.s2w},
-        {id:"b2",    name:"🍼 Biberon 2",         time:computed.b2},
-        {id:"b3",    name:"🍽️ Cina",              time:computed.b3},
+        {id:"b2",    name:"🍽️ Cina",              time:computed.b2},
+        {id:"b3",    name:"🍼 Biberon 2",         time:computed.b3},
         {id:"night", name:"🌙 Somn noapte",       time:computed.night},
     ];
     render();
